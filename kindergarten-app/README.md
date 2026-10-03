@@ -19,6 +19,15 @@ Everything is stored **only on your laptop** – nothing is sent to the internet
 3. Double-click the Setup file. Windows may show a blue **"Windows protected your PC"** screen because the program is
    not digitally signed (signing costs money and is meant for software sold to the public). Click **More info → Run anyway**.
 
+## Trying it on an Android phone
+
+Run `npm run build:web` to create `build-web/KindergartenManager.html`: one self-contained file that opens in Chrome on a phone
+(or any computer) and has a phone layout. Send it by WhatsApp, save it from the chat, and open it from your Downloads folder in Chrome.
+
+* Data is kept **inside that browser only** (not shared between devices), so use **Menu → Backup** often.
+* If a viewer blocks saving, the app shows a red "Not being saved" warning instead of silently losing data.
+* This is meant for trying the app. For the real records use the Windows installer, which saves to a file and backs up daily.
+
 ## Your data and backups
 
 * Saved automatically after every change (look for **Saved ✓** at the top right).

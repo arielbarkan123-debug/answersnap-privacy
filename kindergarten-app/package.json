@@ -10,7 +10,8 @@
   "scripts": {
     "start": "electron .",
     "test": "node --test test/*.test.js",
-    "dist": "electron-builder --win nsis portable --x64 --publish never"
+    "dist": "electron-builder --win nsis portable --x64 --publish never",
+    "build:web": "node tools/build-single-file.js"
   },
   "devDependencies": {
     "electron": "^33.2.0",

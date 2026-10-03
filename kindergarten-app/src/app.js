@@ -3,17 +3,22 @@
   const L = window.KGLogic;
   const hasApi = !!window.kgApi;
 
+  let memoryOnly = false; // browser mode only: true when the browser refuses to store data
+
   // ---------- storage: file on disk in the desktop app, localStorage in a plain browser ----------
   const storage = hasApi
     ? { load: () => window.kgApi.load(), save: (d, o) => window.kgApi.save(d, o) }
     : {
         load: async () => {
+          try { localStorage.setItem('kg-probe', '1'); localStorage.removeItem('kg-probe'); }
+          catch (e) { memoryOnly = true; return { ok: true, data: null }; } // storage blocked: work in memory, warn the user
           try {
             const t = localStorage.getItem('kg-data');
             return { ok: true, data: t ? JSON.parse(t) : null };
           } catch (e) { return { ok: false, error: e.message }; }
         },
         save: async (d) => {
+          if (memoryOnly) return { ok: true };
           try { localStorage.setItem('kg-data', JSON.stringify(d)); return { ok: true }; }
           catch (e) { return { ok: false, error: e.message }; }
         },
@@ -57,7 +62,7 @@
     const snapshot = JSON.parse(JSON.stringify(state));
     saveChain = saveChain.then(() => storage.save(snapshot, opts)).then((r) => {
       if (r && r.ok) {
-        status.textContent = 'Saved ✓ ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        status.innerHTML = 'Saved ✓<span class="st-time"> ' + esc(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })) + '</span>';
       } else {
         status.className = 'save-status err';
         status.textContent = '⚠ NOT SAVED';
@@ -144,6 +149,7 @@
   function renderAll() {
     $('#schoolName').textContent = state.settings.schoolName || 'Kindergarten';
     document.title = (state.settings.schoolName || 'Kindergarten') + ' – Kindergarten Manager';
+    document.body.classList.toggle('has-sel', !!getChild(selectedId));
     renderSummary();
     renderList();
     renderDetail();
@@ -162,7 +168,9 @@
       stat('Total owed to you', money(outstanding), outstanding > 0 ? 'owe' : '') +
       stat('Collected this month', money(collected)) +
       stat(`Not fully paid for ${fmtMonth(ym)}`, behind) +
-      (hasApi ? '' : `<div class="stat" style="background:var(--warn-bg)"><div class="k">Browser mode</div><div class="v" style="font-size:13px;font-weight:500">Data is stored in this browser only.<br>Use Backup often, or use the desktop app.</div></div>`);
+      (hasApi ? '' : memoryOnly
+        ? '<div class="stat note"><div class="k">Not being saved</div><div class="v">This browser blocks saving, so everything is lost when you close the page. Open the file in Chrome from your Downloads folder, and use Menu → Backup.</div></div>'
+        : '<div class="stat note"><div class="k">Saved in this browser only</div><div class="v">Use Menu → Backup often and keep the file safe.</div></div>');
   }
   const stat = (k, v, cls = '') => `<div class="stat"><div class="k">${esc(k)}</div><div class="v ${cls}">${esc(v)}</div></div>`;
 
@@ -210,6 +218,7 @@
     const t = totals(c);
     const status = L.isActive(c, today()) ? '<span class="pill ok">Attending</span>' : `<span class="pill mute">Left ${esc(fmtDate(c.leftOn))}</span>`;
     box.innerHTML = `
+      <button class="btn back-btn" data-action="back">← All children</button>
       <div class="detail-head"><h2>${esc(fullName(c))}</h2>${status}${balancePill(c)}</div>
       <div class="detail-sub">${esc([c.group, L.age(c.dob) && 'Age ' + L.age(c.dob)].filter(Boolean).join(' · '))}</div>
       <div class="tabs" role="tablist">
@@ -272,15 +281,15 @@
       ...c.charges.map((x) => ({ kind: 'chg', date: x.date, item: x })),
     ].sort((a, b) => String(b.date).localeCompare(String(a.date)));
     const ledger = rows.map((r) => r.kind === 'pay'
-      ? `<tr><td>${esc(fmtDate(r.item.date))}</td><td><span class="pill ok">Payment</span></td>
-          <td>${esc(['for ' + fmtMonth(r.item.forMonth), r.item.method, r.item.note].filter((x) => x && x !== 'for ').join(' · '))}</td>
-          <td class="num">${esc(money(r.item.amount))}</td>
-          <td class="num"><button class="btn small" data-action="receipt" data-pid="${esc(r.item.id)}">Receipt</button>
+      ? `<tr><td data-label="Date">${esc(fmtDate(r.item.date))}</td><td data-label="Type"><span class="pill ok">Payment</span></td>
+          <td data-label="Details">${esc(['for ' + fmtMonth(r.item.forMonth), r.item.method, r.item.note].filter((x) => x && x !== 'for ').join(' · '))}</td>
+          <td class="num" data-label="Amount">${esc(money(r.item.amount))}</td>
+          <td class="num actions"><button class="btn small" data-action="receipt" data-pid="${esc(r.item.id)}">Receipt</button>
             <button class="btn small" data-action="edit-payment" data-pid="${esc(r.item.id)}">Edit</button>
             <button class="btn small danger" data-action="delete-payment" data-pid="${esc(r.item.id)}">Delete</button></td></tr>`
-      : `<tr><td>${esc(fmtDate(r.item.date))}</td><td><span class="pill warn">Charge</span></td>
-          <td>${esc(r.item.description)}</td><td class="num">${esc(money(r.item.amount))}</td>
-          <td class="num"><button class="btn small" data-action="edit-charge" data-cid="${esc(r.item.id)}">Edit</button>
+      : `<tr><td data-label="Date">${esc(fmtDate(r.item.date))}</td><td data-label="Type"><span class="pill warn">Charge</span></td>
+          <td data-label="Details">${esc(r.item.description)}</td><td class="num" data-label="Amount">${esc(money(r.item.amount))}</td>
+          <td class="num actions"><button class="btn small" data-action="edit-charge" data-cid="${esc(r.item.id)}">Edit</button>
             <button class="btn small danger" data-action="delete-charge" data-cid="${esc(r.item.id)}">Delete</button></td></tr>`).join('');
     const balLabel = t.balance > 0.004 ? 'Owes' : t.balance < -0.004 ? 'Credit' : 'Balance';
     return `<div class="totals">
@@ -293,7 +302,7 @@
       <div class="section-title"><strong>Payments &amp; charges</strong><span>
         <button class="btn small" data-action="add-charge">+ Add charge</button>
         <button class="btn primary small" data-action="add-payment">+ Record payment</button></span></div>
-      ${rows.length ? `<table><thead><tr><th>Date</th><th>Type</th><th>Details</th><th class="num">Amount</th><th></th></tr></thead><tbody>${ledger}</tbody></table>`
+      ${rows.length ? `<table class="stack"><thead><tr><th>Date</th><th>Type</th><th>Details</th><th class="num">Amount</th><th></th></tr></thead><tbody>${ledger}</tbody></table>`
         : '<p style="color:var(--muted)">No payments recorded yet.</p>'}`;
   }
 
@@ -426,10 +435,10 @@
        <div class="dlg-body">
          <label style="display:flex;gap:10px;align-items:center;margin-bottom:12px">Month <input type="month" id="ovMonth" value="${esc(ym)}" style="width:auto"></label>
          <div class="totals">${stat('Expected', money(due))}${stat('Received', money(paid))}${stat('Still missing', money(Math.max(0, due - paid)), due - paid > 0 ? 'owe' : '')}</div>
-         ${rows.length ? `<table><thead><tr><th>Child</th><th>Group</th><th class="num">Fee</th><th class="num">Paid for ${esc(fmtMonth(ym))}</th><th>Status</th></tr></thead><tbody>
-           ${rows.map(({ c, s }) => `<tr><td><a href="#" data-action="goto-child" data-id="${esc(c.id)}">${esc(fullName(c))}</a></td><td>${esc(c.group)}</td>
-             <td class="num">${esc(money(s.due))}</td><td class="num">${esc(money(s.paid))}</td>
-             <td><span class="pill ${pill[s.state]}">${esc(s.state)}</span></td></tr>`).join('')}</tbody></table>`
+         ${rows.length ? `<table class="stack"><thead><tr><th>Child</th><th>Group</th><th class="num">Fee</th><th class="num">Paid for ${esc(fmtMonth(ym))}</th><th>Status</th></tr></thead><tbody>
+           ${rows.map(({ c, s }) => `<tr><td data-label="Child"><a href="#" data-action="goto-child" data-id="${esc(c.id)}">${esc(fullName(c))}</a></td><td data-label="Group">${esc(c.group) || '—'}</td>
+             <td class="num" data-label="Fee">${esc(money(s.due))}</td><td class="num" data-label="Paid">${esc(money(s.paid))}</td>
+             <td data-label="Status"><span class="pill ${pill[s.state]}">${esc(s.state)}</span></td></tr>`).join('')}</tbody></table>`
           : '<p style="color:var(--muted)">No enrolled children in this month.</p>'}
        </div>
        <div class="dlg-foot"><button class="btn" data-action="close-dlg">Close</button></div>`, true);
@@ -505,6 +514,14 @@
   // ---------- actions ----------
   const actions = {
     'close-dlg': () => closeDialog(),
+    back: () => { selectedId = null; renderAll(); window.scrollTo(0, 0); },
+    menu: () => openDialog(
+      `<div class="dlg-head">Menu</div><div class="dlg-body"><div class="menu-list">
+        ${[['overview', 'Monthly overview'], ['export-children', 'Export children (CSV)'], ['export-payments', 'Export payments (CSV)'],
+           ['backup', 'Backup (save a copy of all data)'], ['restore', 'Restore from a backup file'], ['settings', 'Settings']]
+          .map(([k, l]) => `<button class="btn" data-action="menu-run" data-run="${k}">${esc(l)}</button>`).join('')}
+      </div></div><div class="dlg-foot"><button class="btn" data-action="close-dlg">Close</button></div>`),
+    'menu-run': (d) => { closeDialog(); actions[d.run](d); },
     tab: (d) => { tab = d.tab; renderDetail(); },
     'add-child': () => childForm(null),
     'edit-child': () => childForm(getChild(selectedId)),
@@ -561,7 +578,7 @@
       return;
     }
     const li = e.target.closest('#childList li[data-id]');
-    if (li) { selectedId = li.dataset.id; renderAll(); }
+    if (li) { selectedId = li.dataset.id; tab = 'info'; renderAll(); $('#detail').scrollTop = 0; }
   });
   $('#childList').addEventListener('keydown', (e) => {
     const li = e.target.closest('li[data-id]');
