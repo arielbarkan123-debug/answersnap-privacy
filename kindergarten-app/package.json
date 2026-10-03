@@ -1,0 +1,47 @@
+{
+  "name": "kindergarten-manager",
+  "productName": "Kindergarten Manager",
+  "version": "1.0.0",
+  "description": "Offline desktop app for a kindergarten: children, parents and payments.",
+  "main": "main.js",
+  "author": "Kindergarten",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.js",
+    "dist": "electron-builder --win nsis portable --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.kindergarten.manager",
+    "productName": "Kindergarten Manager",
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false,
+      "artifactName": "KindergartenManager-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "KindergartenManager-Portable-${version}.${ext}"
+    }
+  }
+}

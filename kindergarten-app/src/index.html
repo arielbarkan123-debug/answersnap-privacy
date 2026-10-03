@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kindergarten Manager</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <h1 id="schoolName">Kindergarten</h1>
+      <div class="topbar-actions">
+        <button class="btn" data-action="overview">Monthly overview</button>
+        <button class="btn" data-action="export-children">Export children (CSV)</button>
+        <button class="btn" data-action="export-payments">Export payments (CSV)</button>
+        <button class="btn" data-action="backup">Backup</button>
+        <button class="btn" data-action="restore">Restore</button>
+        <button class="btn" data-action="settings">Settings</button>
+      </div>
+      <span id="saveStatus" class="save-status" role="status" aria-live="polite"></span>
+    </header>
+
+    <section class="summary" id="summary"></section>
+
+    <main class="layout">
+      <aside class="sidebar">
+        <div class="sidebar-tools">
+          <input id="search" type="search" placeholder="Search child or parent…" aria-label="Search">
+          <select id="filter" aria-label="Filter">
+            <option value="active">Active children</option>
+            <option value="owing">Owes money</option>
+            <option value="inactive">Left / inactive</option>
+            <option value="all">All children</option>
+          </select>
+          <button class="btn primary" data-action="add-child">+ Add child</button>
+        </div>
+        <ul id="childList" class="child-list"></ul>
+      </aside>
+      <section class="detail" id="detail"></section>
+    </main>
+  </div>
+
+  <div id="fatal" class="fatal" hidden></div>
+  <dialog id="dlg"></dialog>
+  <div id="printArea" aria-hidden="true"></div>
+  <input type="file" id="restoreFile" accept="application/json,.json" hidden>
+
+  <script src="logic.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
