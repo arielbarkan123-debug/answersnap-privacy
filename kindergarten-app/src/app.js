@@ -573,8 +573,6 @@
     const f = e.target.files[0];
     if (f) f.text().then(restoreFromText);
   });
-  // Clicking the dark area around a dialog closes it.
-  dlg.addEventListener('mousedown', (e) => { if (e.target === dlg) closeDialog(); });
 
   // ---------- start ----------
   function showFatal(msg) {

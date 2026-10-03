@@ -108,9 +108,10 @@ dialog::backdrop { background: rgba(20, 28, 50, .45); }
 
 #printArea { display: none; }
 @media print {
-  body * { visibility: hidden; }
-  #printArea, #printArea * { visibility: visible; }
-  #printArea { display: block; position: absolute; left: 0; top: 0; width: 100%; padding: 30px; color: #000; font-family: Georgia, serif; }
+  /* Print only the receipt; remove everything else from layout so no blank pages appear. */
+  body { background: #fff; }
+  #app, #dlg, #fatal { display: none !important; }
+  #printArea { display: block; padding: 30px; color: #000; font-family: Georgia, serif; }
   #printArea h2 { margin-bottom: 4px; }
   #printArea table { margin: 18px 0; }
   #printArea td, #printArea th { border-bottom: 1px solid #999; }

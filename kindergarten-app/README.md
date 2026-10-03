@@ -44,3 +44,6 @@ npm run dist     # build the Windows installer (run on Windows; GitHub Actions d
 
 For each child: **due** = monthly fee × number of months from the enrolment month up to the current month (or the month they left)
 \+ extra charges; **balance** = due − everything paid. A positive balance means the family owes money; negative means credit.
+
+**Limitation:** each child has one monthly fee. If you change it, *all* months are recalculated with the new fee (past months
+included). To raise a price from a certain month only, a fee history would need to be added to the program.
